@@ -11,13 +11,13 @@
     <title>Graph</title>
 </head>
 
-<body class="bg-secondary d-flex justify-content-center align-items-center" style="height: 100vh;">
+<body class="d-flex justify-content-center align-items-center" style="height: 100vh;">
 
-    <div class="container d-flex justify-content-center align-items-center flex-column bg-light border border-3 border-dark p-3">
-        <form id="dateForm">
-            <input type="date" id="dateInput" value="2021-06-19">
-            <input type="submit" value="Submit" id="dateSubmit" disabled>
-            <span id="loading">loading JSON...</span>
+    <div class="container  d-flex justify-content-center align-items-center flex-column p-3 shadow-lg">
+        <form id="dateForm" class="d-flex align-items-center mb-3">
+            <input type="date" class="form-control" id="dateInput" value="2021-06-19">
+            <input type="submit" class="btn btn-primary ms-2" value="Submit" id="dateSubmit" disabled>
+            <span id="loading" class="ms-2">loading JSON...</span>
         </form>
         <div class="w-100 p-3">
             <canvas id="myChart" width="200" height="100"></canvas>
