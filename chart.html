@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>Graph</title>
+</head>
+
+<body class="bg-secondary d-flex justify-content-center align-items-center" style="height: 100vh;">
+
+    <div class="container d-flex justify-content-center align-items-center flex-column bg-light border border-3 border-dark p-3">
+        <form id="dateForm">
+            <input type="date" id="dateInput" value="2021-06-19">
+            <input type="submit" value="Submit" id="dateSubmit" disabled>
+            <span id="loading">loading JSON...</span>
+        </form>
+        <div class="w-100 p-3">
+            <canvas id="myChart" width="200" height="100"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const dateForm = document.querySelector('#dateForm')
+const dateInput = document.querySelector('#dateInput')
+const ctx = document.getElementById('myChart').getContext('2d');
+let myChart
+
+async function init() {
+    const response = await fetch('https://jsonkeeper.com/b/HU8U')
+    const data = await response.json()
+    console.log(data)
+    document.querySelector('#loading').style.display = 'none'
+    document.querySelector('#dateSubmit').disabled = false
+
+
+    dateForm.addEventListener('submit', (e) => {
+        e.preventDefault() //prevent refresh on submit
+        console.log(dateInput.value)
+
+        //filter data by item_date
+        let item_date = data.filter(x => x.item_date == dateInput.value)
+        console.log(item_date)
+
+        //get schedule_dates for the item_date 
+        let dates = []
+        item_date.map(x => {
+            dates.push(x.schedule_time.slice(0, 10))
+        })
+        console.log(dates)
+
+        //get unique dates for inputting on the graph(y axis) ie remove repeated dates
+        let uniqueDates = dates.filter(function (item, index, inputArray) {
+            return inputArray.indexOf(item) == index;
+        });
+        console.log(uniqueDates)
+
+        //get schedule_dates count for each unique date
+        let dateCounts = []
+        uniqueDates.map(x => {
+            dateCounts.push(dates.filter(y => y == x).length)
+        })
+        console.log(dateCounts)
+
+        if (myChart) myChart.destroy()
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: uniqueDates,
+                datasets: [{
+                    label: '# of Schedules',
+                    data: dateCounts,
+                    backgroundColor: backgroundColor
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function (context) {
+                                tooltipDate = context[0].label
+                                console.log(tooltipDate)
+
+                                let schedules = item_date.filter(schedule => schedule.schedule_time.slice(0, 10) == tooltipDate)
+                                schedule_times = schedules.map(schedule => new Date(schedule.schedule_time))  //array of schedule_time in JS Date format
+                                schedule_time_hours = schedule_times.map(schedule_time => schedule_time.getHours())  //array of schedule_time hours only ie 0-23
+                                console.log(schedule_time_hours)
+
+                                let count9To12 = schedule_time_hours.filter(schedule_time_hour => schedule_time_hour >= 9 && schedule_time_hour < 12).length
+                                let count12To15 = schedule_time_hours.filter(schedule_time_hour => schedule_time_hour >= 12 && schedule_time_hour < 15).length
+                                let count15To18 = schedule_time_hours.filter(schedule_time_hour => schedule_time_hour >= 15 && schedule_time_hour < 18).length
+                                let count18To21 = schedule_time_hours.filter(schedule_time_hour => schedule_time_hour >= 18 && schedule_time_hour < 21).length
+                                let count21To9 = schedule_time_hours.filter(schedule_time_hour => schedule_time_hour >= 21 || schedule_time_hour < 9).length
+                                console.log(count9To12, count12To15, count15To18, count18To21, count21To9)
+
+                                // return `9AM to 12PM - ${count9To12} Schedules  12PM to 3PM - ${count12To15} Schedules
+                                // 3PM to 6PM - ${count15To18} Schedules
+                                // 6PM to 9PM - ${count18To21} Schedules
+                                // Remaining  - ${count21To9} Schedules`
+                                return [`9AM to 12PM - ${count9To12} Schedules`, `12PM to 3PM - ${count12To15} Schedules`, `3PM to 6PM - ${count15To18} Schedules`, `6PM to 9PM - ${count18To21} Schedules`, `Remaining - ${count21To9} Schedules`]
+                            }
+
+                        }
+                    }
+                }
+            }
+        });
+
+        if (item_date.length == 0) alert('No schedules on this date')
+    })
+
+}
+init()
+const backgroundColor = [
+    'rgba(255, 99, 132, 0.2)',
+    'rgba(54, 162, 235, 0.2)',
+    'rgba(255, 206, 86, 0.2)',
+    'rgba(75, 192, 192, 0.2)',
+    'rgba(153, 102, 255, 0.2)',
+    'rgba(255, 159, 64, 0.2)'
+]
+
+    </script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
+</body>
+
+</html>
